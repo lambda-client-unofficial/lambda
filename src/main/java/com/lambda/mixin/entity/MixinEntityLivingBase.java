@@ -1,11 +1,9 @@
 package com.lambda.mixin.entity;
 
+import com.lambda.EntityLivingBaseFireworkHelper;
 import com.lambda.client.module.modules.movement.ElytraFlight;
-import com.lambda.mixin.accessor.AccessorEntityFireworkRocket;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.EntityFireworkRocket;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -33,7 +31,7 @@ public abstract class MixinEntityLivingBase extends Entity {
         at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/entity/EntityLivingBase;getLookVec()Lnet/minecraft/util/math/Vec3d;", ordinal = 0)
     )
     private Vec3d vec3d(Vec3d original) {
-        if (shouldWork()) {
+        if (EntityLivingBaseFireworkHelper.shouldWork(EntityLivingBase.class.cast(this))) {
             float negPacketPitch = -ElytraFlight.INSTANCE.getPacketPitch();
             float f0 = MathHelper.cos((float) (-this.rotationYaw * 0.017453292f - Math.PI));
             float f1 = MathHelper.sin((float) (-this.rotationYaw * 0.017453292f - Math.PI));
@@ -51,7 +49,7 @@ public abstract class MixinEntityLivingBase extends Entity {
         ordinal = 3
     )
     private float f(float original) {
-        if (shouldWork()) {
+        if (EntityLivingBaseFireworkHelper.shouldWork(EntityLivingBase.class.cast(this))) {
             return ElytraFlight.INSTANCE.getPacketPitch() * 0.017453292f;
         }
         return original;
@@ -78,7 +76,7 @@ public abstract class MixinEntityLivingBase extends Entity {
         at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lnet/minecraft/entity/EntityLivingBase;motionX:D", ordinal = 7)
     )
     public double motionX(EntityLivingBase it) {
-        if (shouldModify()) {
+        if (EntityLivingBaseFireworkHelper.shouldModify(EntityLivingBase.class.cast(this))) {
             it.motionX += modifiedVec.x * 0.1 + (modifiedVec.x * 1.5 - this.motionX) * 0.5;
         }
         return it.motionX;
@@ -89,7 +87,7 @@ public abstract class MixinEntityLivingBase extends Entity {
         at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lnet/minecraft/entity/EntityLivingBase;motionY:D", ordinal = 7)
     )
     public double motionY(EntityLivingBase it) {
-        if (shouldModify()) {
+        if (EntityLivingBaseFireworkHelper.shouldModify(EntityLivingBase.class.cast(this))) {
             it.motionY += modifiedVec.y * 0.1 + (modifiedVec.y * 1.5 - this.motionY) * 0.5;
         }
         return it.motionY;
@@ -100,28 +98,10 @@ public abstract class MixinEntityLivingBase extends Entity {
         at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lnet/minecraft/entity/EntityLivingBase;motionZ:D", ordinal = 7)
     )
     public double motionZ(EntityLivingBase it) {
-        if (shouldModify()) {
+        if (EntityLivingBaseFireworkHelper.shouldModify(EntityLivingBase.class.cast(this))) {
             it.motionZ += modifiedVec.z * 0.1 + (modifiedVec.z * 1.5 - this.motionZ) * 0.5;
         }
         return it.motionZ;
     }
 
-    @Unique
-    private boolean shouldWork() {
-        return EntityPlayerSP.class.isAssignableFrom(getClass())
-            && ElytraFlight.INSTANCE.isEnabled()
-            && ElytraFlight.INSTANCE.getMode().getValue() == ElytraFlight.ElytraFlightMode.VANILLA;
-    }
-
-    @Unique
-    private boolean shouldModify() {
-        return shouldWork() && world.loadedEntityList.stream().anyMatch(entity -> {
-                if (entity instanceof EntityFireworkRocket) {
-                    EntityLivingBase boosted = ((AccessorEntityFireworkRocket) entity).getBoostedEntity();
-                    return boosted != null && boosted.equals(this);
-                }
-                return false;
-            }
-        );
-    }
 }
